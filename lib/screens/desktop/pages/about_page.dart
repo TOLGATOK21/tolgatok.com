@@ -13,6 +13,7 @@ class AboutPage extends StatelessWidget {
         children: [
           // Avatar & Name
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 80,
@@ -29,11 +30,11 @@ class AboutPage extends StatelessWidget {
                 child: const Icon(Icons.person, size: 40, color: Colors.white),
               ),
               const SizedBox(width: 20),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'İsim Soyisim',
+                    'TOLGA TOK',
                     style: TextStyle(
                       color: AppConstants.textColor,
                       fontSize: 24,
@@ -42,7 +43,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Flutter Developer',
+                    'AI ve Mobil Geliştirici',
                     style: TextStyle(
                       color: AppConstants.textSecondary,
                       fontSize: 16,
@@ -78,16 +79,22 @@ class AboutPage extends StatelessWidget {
               _skillChip('REST API'),
               _skillChip('Git'),
               _skillChip('UI/UX'),
+              _skillChip('Makine Öğrenmesi'),
+              _skillChip('Pandas'),
+              _skillChip('NumPy'),
             ],
           ),
           const SizedBox(height: 24),
           const _SectionTitle('İletişim'),
           const SizedBox(height: 12),
-          const _ContactRow(icon: Icons.email, text: 'ornek@email.com'),
+          const _ContactRow(icon: Icons.email, text: 'tolgatnh@gmail.com'),
           const SizedBox(height: 8),
-          const _ContactRow(icon: Icons.language, text: 'github.com/kullanici'),
+          const _ContactRow(
+            icon: Icons.language,
+            text: 'github.com/TOLGATOK21',
+          ),
           const SizedBox(height: 8),
-          const _ContactRow(icon: Icons.location_on, text: 'İstanbul, Türkiye'),
+          const _ContactRow(icon: Icons.location_on, text: 'Konya, Türkiye'),
         ],
       ),
     );
