@@ -56,8 +56,9 @@ class AboutPage extends StatelessWidget {
           const _SectionTitle('Hakkımda'),
           const SizedBox(height: 8),
           const Text(
-            'Merhaba! Ben bir yazılım geliştiriciyim. Flutter, Dart ve web teknolojileri ile ilgileniyorum. '
-            'Bu site macOS masaüstü simülasyonu olarak Flutter Web ile geliştirilmiştir.',
+            'Merhaba! Ben Tolga. Flutter ile son kullanıcı için mobil uygulamalar geliştiriyorum '
+            'Kalan zamanlarımda Yapay zeka, makine öğrenmesi ve veri bilimi alanında kendimi geliştirmeye çalışıyorum'
+            'Meraklısına: Bu site macOS masaüstü simülasyonu olarak Flutter Web ile geliştirilmiştir.',
             style: TextStyle(
               color: AppConstants.textSecondary,
               fontSize: 14,
