@@ -20,15 +20,19 @@ jobs:
           cache: true
 
       - name: Create API keys file
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          cat > lib/config/api_keys.dart << 'DART'
-          class ApiKeys {
-            static const String geminiApiKey = '${{ secrets.GEMINI_API_KEY }}';
-          }
-          DART
+          echo "class ApiKeys { static const String geminiApiKey = '$GEMINI_KEY'; }" > lib/config/api_keys.dart
 
       - name: Inject Firebase API key
-        run: sed -i 's/FIREBASE_API_KEY_PLACEHOLDER/${{ secrets.FIREBASE_API_KEY }}/g' web/index.html
+        env:
+          FB_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        run: python3 -c "
+          import pathlib;
+          f=pathlib.Path('web/index.html');
+          f.write_text(f.read_text().replace('FIREBASE_API_KEY_PLACEHOLDER','$FB_KEY'))
+          "
 
       - name: Install dependencies
         run: flutter pub get
