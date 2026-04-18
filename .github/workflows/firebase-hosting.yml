@@ -28,11 +28,9 @@ jobs:
       - name: Inject Firebase API key
         env:
           FB_KEY: ${{ secrets.FIREBASE_API_KEY }}
-        run: python3 -c "
-          import pathlib;
-          f=pathlib.Path('web/index.html');
-          f.write_text(f.read_text().replace('FIREBASE_API_KEY_PLACEHOLDER','$FB_KEY'))
-          "
+        run: |
+          content=$(cat web/index.html)
+          echo "${content//FIREBASE_API_KEY_PLACEHOLDER/$FB_KEY}" > web/index.html
 
       - name: Install dependencies
         run: flutter pub get
