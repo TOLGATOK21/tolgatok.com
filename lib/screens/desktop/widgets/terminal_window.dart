@@ -50,8 +50,19 @@ class _TerminalWindowState extends State<TerminalWindow> {
     _IntroLine(text: '  ║                                      ║', delay: 40),
     _IntroLine(text: '  ╚══════════════════════════════════════╝', delay: 40),
     _IntroLine(text: '', delay: 200),
-    _IntroLine(text: "\$ echo \"Komut yazmayı deneyin! 'help' yazarak başlayın.\"", delay: 500, isCommand: true),
-    _IntroLine(text: "Komut yazmayı deneyin! 'help' yazarak başlayın.", delay: 300),
+    _IntroLine(
+      text: "\$ echo \"Komut yazmayı deneyin! 'help' yazarak başlayın.\"",
+      delay: 500,
+      isCommand: true,
+    ),
+    _IntroLine(
+      text: "Komut yazmayı deneyin! 'help' yazarak başlayın.",
+      delay: 300,
+    ),
+    _IntroLine(
+      text: "YAPAY ZEKA ASİSTANYLA KONUŞMAK İÇİN 'ai' yazın",
+      delay: 300,
+    ),
     _IntroLine(text: '', delay: 200),
   ];
 
@@ -80,10 +91,12 @@ class _TerminalWindowState extends State<TerminalWindow> {
     Timer(Duration(milliseconds: line.delay), () {
       if (!mounted) return;
       setState(() {
-        _outputLines.add(_OutputLine(
-          text: line.text,
-          type: line.isCommand ? _LineType.command : _LineType.output,
-        ));
+        _outputLines.add(
+          _OutputLine(
+            text: line.text,
+            type: line.isCommand ? _LineType.command : _LineType.output,
+          ),
+        );
         _introIndex++;
       });
       _scrollToBottom();
@@ -91,27 +104,47 @@ class _TerminalWindowState extends State<TerminalWindow> {
     });
   }
 
-  void _executeCommand(String input) {
+  bool _waiting = false;
+
+  Future<void> _executeCommand(String input) async {
     // Prompt satırını çıktıya ekle
     setState(() {
-      _outputLines.add(_OutputLine(
-        text: '${_handler.prompt}$input',
-        type: _LineType.prompt,
-      ));
+      _outputLines.add(
+        _OutputLine(text: '${_handler.prompt}$input', type: _LineType.prompt),
+      );
     });
 
-    final result = _handler.execute(input);
+    _inputController.clear();
+
+    // AI modu veya ai komutu için bekleme göstergesi
+    final showLoading = _handler.isAiMode || input.trim().startsWith('ai');
+    if (showLoading) {
+      setState(() {
+        _waiting = true;
+        _outputLines.add(
+          _OutputLine(text: '⏳ Düşünüyor...', type: _LineType.output),
+        );
+      });
+      _scrollToBottom();
+    }
+
+    final result = await _handler.execute(input);
+
+    if (!mounted) return;
 
     setState(() {
+      _waiting = false;
+      if (showLoading && _outputLines.isNotEmpty) {
+        _outputLines.removeLast();
+      }
+
       if (result == null) {
-        // clear komutu
         _outputLines.clear();
       } else if (result.isNotEmpty) {
         _outputLines.add(_OutputLine(text: result, type: _LineType.output));
       }
     });
 
-    _inputController.clear();
     _scrollToBottom();
   }
 
@@ -152,10 +185,7 @@ class _TerminalWindowState extends State<TerminalWindow> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Column(
-            children: [
-              _buildTitleBar(),
-              Expanded(child: _buildTerminalBody()),
-            ],
+            children: [_buildTitleBar(), Expanded(child: _buildTerminalBody())],
           ),
         ),
       ),
@@ -166,33 +196,35 @@ class _TerminalWindowState extends State<TerminalWindow> {
     return GestureDetector(
       onPanUpdate: widget.onDragUpdate,
       child: Container(
-      height: 38,
-      decoration: const BoxDecoration(
-        color: Color(0xFF2A2B3D),
-        border: Border(bottom: BorderSide(color: Color(0xFF1A1A2A), width: 1)),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          _trafficLight(AppConstants.closeButton, widget.onClose),
-          const SizedBox(width: 8),
-          _trafficLight(AppConstants.minimizeButton, null),
-          const SizedBox(width: 8),
-          _trafficLight(AppConstants.maximizeButton, null),
-          const Spacer(),
-          Text(
-            'Terminal — ${_handler.currentPath}',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+        height: 38,
+        decoration: const BoxDecoration(
+          color: Color(0xFF2A2B3D),
+          border: Border(
+            bottom: BorderSide(color: Color(0xFF1A1A2A), width: 1),
           ),
-          const Spacer(),
-          const SizedBox(width: 68),
-        ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            _trafficLight(AppConstants.closeButton, widget.onClose),
+            const SizedBox(width: 8),
+            _trafficLight(AppConstants.minimizeButton, null),
+            const SizedBox(width: 8),
+            _trafficLight(AppConstants.maximizeButton, null),
+            const Spacer(),
+            Text(
+              'Terminal — ${_handler.currentPath}',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
+            const SizedBox(width: 68),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -229,7 +261,7 @@ class _TerminalWindowState extends State<TerminalWindow> {
               ),
             ),
             // Input line
-            if (!_introPlaying) _buildInputLine(),
+            if (!_introPlaying && !_waiting) _buildInputLine(),
           ],
         ),
       ),
@@ -250,26 +282,28 @@ class _TerminalWindowState extends State<TerminalWindow> {
         final promptPart = line.text.substring(0, promptEnd + 2);
         final cmdPart = line.text.substring(promptEnd + 2);
         return Text.rich(
-          TextSpan(children: [
-            TextSpan(
-              text: promptPart,
-              style: const TextStyle(
-                color: Color(0xFF7AA2F7),
-                fontFamily: 'monospace',
-                fontSize: 13,
-                height: 1.7,
+          TextSpan(
+            children: [
+              TextSpan(
+                text: promptPart,
+                style: const TextStyle(
+                  color: Color(0xFF7AA2F7),
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  height: 1.7,
+                ),
               ),
-            ),
-            TextSpan(
-              text: cmdPart,
-              style: const TextStyle(
-                color: Color(0xFFA9B1D6),
-                fontFamily: 'monospace',
-                fontSize: 13,
-                height: 1.7,
+              TextSpan(
+                text: cmdPart,
+                style: const TextStyle(
+                  color: Color(0xFFA9B1D6),
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  height: 1.7,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         );
       }
     }

@@ -1,20 +1,38 @@
 import 'package:flutter_web/services/virtual_file_system.dart';
+import 'package:flutter_web/services/gemini_service.dart';
 
 class TerminalCommandHandler {
   final VirtualFileSystem _fs = VirtualFileSystem();
+  final GeminiService _gemini = GeminiService();
   final List<String> _history = [];
   int _historyIndex = -1;
+  bool _aiMode = false;
 
+  bool get isAiMode => _aiMode;
   String get currentPath => _fs.currentPath;
-  String get prompt => 'tolga@macbook:${_fs.currentPath}\$ ';
+  String get prompt => _aiMode
+      ? '🤖 ai> '
+      : 'tolga@macbook:${_fs.currentPath}\$ ';
 
   /// Returns null when 'clear' command — caller should clear the screen.
-  String? execute(String input) {
+  /// Returns a Future<String?> for async commands (ai).
+  /// For sync commands, wraps result in Future.
+  Future<String?> execute(String input) async {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return '';
 
     _history.add(trimmed);
     _historyIndex = _history.length;
+
+    // AI modundayken
+    if (_aiMode) {
+      if (trimmed == 'exit' || trimmed == 'quit' || trimmed == 'q') {
+        _aiMode = false;
+        return '🤖 AI asistan kapatıldı. Terminal moduna dönüldü.';
+      }
+      if (trimmed == 'clear') return null;
+      return await _gemini.ask(trimmed);
+    }
 
     final parts = trimmed.split(RegExp(r'\s+'));
     final cmd = parts[0];
@@ -51,6 +69,14 @@ class TerminalCommandHandler {
         return _neofetch();
       case 'tree':
         return _tree();
+      case 'ai':
+        _aiMode = true;
+        if (args.isNotEmpty) {
+          // ai merhaba gibi direkt soru da destekle
+          return '🤖 AI asistan aktif. Çıkmak için "exit" yazın.\n\n${await _gemini.ask(args.join(' '))}';
+        }
+        return '🤖 AI asistan aktif. Sorularınızı yazın.\n'
+            '   Çıkmak için "exit" yazın.';
       default:
         return 'bash: $cmd: komut bulunamadı\n'
             "Yardım için 'help' yazın.";
@@ -107,6 +133,7 @@ class TerminalCommandHandler {
         '║  uname         Sistem adı                  ║\n'
         '║  hostname      Makine adı                  ║\n'
         '║  clear         Ekranı temizle             ║\n'
+        '║  ai <soru>     Yapay zekaya sor           ║\n'
         '║  help          Bu yardım mesajı           ║\n'
         '╚═══════════════════════════════════════════╝';
   }

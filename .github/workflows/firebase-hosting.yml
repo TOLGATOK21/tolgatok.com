@@ -19,6 +19,17 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create API keys file
+        run: |
+          cat > lib/config/api_keys.dart << 'DART'
+          class ApiKeys {
+            static const String geminiApiKey = '${{ secrets.GEMINI_API_KEY }}';
+          }
+          DART
+
+      - name: Inject Firebase API key
+        run: sed -i 's/FIREBASE_API_KEY_PLACEHOLDER/${{ secrets.FIREBASE_API_KEY }}/g' web/index.html
+
       - name: Install dependencies
         run: flutter pub get
 
